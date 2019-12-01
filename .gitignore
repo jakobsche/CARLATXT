@@ -1,0 +1,7 @@
+.DS_Store
+*.BAK
+*.TP?
+BP.DSK
+BP.TP
+BP.PSM
+*.MAP
