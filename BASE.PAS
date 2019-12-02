@@ -10,14 +10,17 @@ uses
 
 const
 
-  cmDummy         = 1000;
-  cmSelectWindow  = 1001;
-  cmMono          = 1002;
-  cmBW            = 1003;
-  cmColor         = 1004;
-  cmResolution    = 1005;
-  cmInfo          = 1006;
-  cmShowClipboard = 1007;
+  cmDummy             = 1000;
+  cmSelectWindow      = 1001;
+  cmMono              = 1002;
+  cmBW                = 1003;
+  cmColor             = 1004;
+  cmResolution        = 1005;
+  cmInfo              = 1006;
+  cmShowClipboard     = 1007;
+  cmSelectBluePalette = 1008;
+  cmSelectCyanPalette = 1009;
+  cmSelectGrayPalette = 1010;
 
 
 type
@@ -35,6 +38,7 @@ type
   PCarlaEditor = ^TCarlaEditor;
   TCarlaEditor = object(TEditWindow)
     destructor Done; virtual;
+    procedure HandleEvent(var Event: TEvent); virtual;
   end;
 
 
@@ -112,6 +116,29 @@ end;
 
 
 { TCarlaEditor }
+
+procedure TCarlaEditor.HandleEvent(var Event: TEvent);
+begin
+  inherited HandleEvent(Event);
+  if Event.What <> evNothing then
+    case Event.Command of
+      cmSelectBluePalette: begin
+          Palette := wpBlueWindow;
+          Redraw;
+          ClearEvent(Event)
+        end;
+      cmSelectCyanPalette: begin
+          Palette := wpCyanWindow;
+          Redraw;
+          ClearEvent(Event)
+        end;
+      cmSelectGrayPalette: begin
+          Palette := wpGrayWindow;
+          Redraw;
+          ClearEvent(Event)
+        end;
+    end;
+end;
 
 destructor TCarlaEditor.Done;
 begin
@@ -268,7 +295,8 @@ begin
         end;
       cmShowClipboard: begin
           with ClipboardWindow^ do begin
-            Select
+            Show;
+            Focus
           end;
           ClearEvent(Event)
         end;
@@ -289,7 +317,7 @@ begin
       NewMenu(
         StdEditMenuItems(
         NewLine(
-        NewItem('Show Clipboard', '', kbNoKey, cmShowClipboard, hcNoContext,
+        NewItem('~S~how Clipboard', '', kbNoKey, cmShowClipboard, hcNoContext,
         nil)))),
     NewSubMenu('~V~iew', 0,
       NewMenu(
@@ -304,9 +332,15 @@ begin
     NewSubMenu('~W~indow', 0,
       NewMenu(
         StdWindowMenuItems(
+        NewSubMenu('Pal~e~tte', hcNoContext,
+          NewMenu(
+            NewItem('~B~lue', '', kbNoKey, cmSelectBluePalette, hcNoContext,
+            NewItem('~C~yan', '', kbNoKey, cmSelectCyanPalette, hcNoContext,
+            NewItem('~G~ray', '', kbNoKey, cmSelectGrayPalette, hcNoContext,
+            nil)))),
         NewLine(
         NewItem('~L~ist...', '', kbNoKey, cmSelectWindow, hcNoContext,
-        nil)))),
+        nil))))),
     NewSubMenu('~H~elp', hcNoContext,
       NewMenu(
         NewItem('~A~bout ...', 'F1', kbF1, cmInfo, hcNoContext,
