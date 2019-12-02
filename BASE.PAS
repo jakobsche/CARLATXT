@@ -10,6 +10,10 @@ uses
 
 const
 
+  cmSelectBluePalette = 100;
+  cmSelectCyanPalette = 101;
+  cmSelectGrayPalette = 102;
+
   cmDummy             = 1000;
   cmSelectWindow      = 1001;
   cmMono              = 1002;
@@ -18,9 +22,9 @@ const
   cmResolution        = 1005;
   cmInfo              = 1006;
   cmShowClipboard     = 1007;
-  cmSelectBluePalette = 1008;
-  cmSelectCyanPalette = 1009;
-  cmSelectGrayPalette = 1010;
+
+
+  CarlaEditorCommands = [cmSelectBluePalette, cmSelectCyanPalette, cmSelectGrayPalette];
 
 
 type
@@ -38,6 +42,7 @@ type
   PCarlaEditor = ^TCarlaEditor;
   TCarlaEditor = object(TEditWindow)
     destructor Done; virtual;
+    procedure SetState(AState: Word; Enable: Boolean); virtual;
     procedure HandleEvent(var Event: TEvent); virtual;
   end;
 
@@ -148,6 +153,14 @@ begin
   inherited Done;
 end;
 
+procedure TCarlaEditor.SetState(AState: Word; Enable: Boolean);
+begin
+  inherited SetState(AState, Enable);
+  if AState and sfSelected <> 0 then
+    if Enable then EnableCommands(CarlaEditorCommands)
+    else DisableCommands(CarlaEditorCommands)
+end;
+
 { TWindowListBox }
 
 function TWindowListBox.GetText(Item: Integer; MaxLen: Integer): string;
@@ -212,7 +225,8 @@ begin
     ClipBoardWindow^.Hide;
     NumberL := EditWindowList^.Count;
     MessageBox('%d windows collected', @NumberL, mfInformation or mfOKButton)
-  end
+  end;
+  DisableCommands([cmSelectBluePalette, cmSelectCyanPalette, cmSelectGrayPalette])
 end;
 
 destructor TTextApp.Done;
