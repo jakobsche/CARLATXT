@@ -99,7 +99,7 @@ var
 
 implementation
 
-uses MsgBox, Memory;
+uses MsgBox, Memory, StdDlg, DOS;
 
 
 type
@@ -262,6 +262,8 @@ var
   NumberL: Longint;
   WindowListViewData: TWindowListViewData;
   W: PCarlaEditor;
+  FN: string;
+  FD: PFileDialog;
 
   function HasFocus(Item: PView): Boolean; far;
   begin
@@ -289,6 +291,16 @@ begin
         end;
       cmOpen: begin
           ShowMessage('Datei ”ffnen');
+          FD := New(PFileDialog, Init('*.*', 'Open', '', fdOpenButton, 0));
+          FN := '';
+          if ExecuteDialog(FD, @FN) = cmOK then begin
+            ShowMessage('Dateiname: "' + FN + '"');
+            if NewEditWindow(FN) = nil then ShowMessage('No new Window')
+            else begin
+              NumberL := EditWindowList^.Count;
+              MessageBox('%d windows collected', @NumberL, mfInformation or mfOKButton)
+            end;
+          end;
           ClearEvent(Event);
         end;
       cmSelectWindow: begin
