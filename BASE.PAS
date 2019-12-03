@@ -1,3 +1,5 @@
+{ Das Anwendungsobjekt }
+
 unit Base;
 
 
@@ -113,10 +115,28 @@ type
 constructor TAboutBox.Init;
 var
   R: TRect;
+  Button: PButton;
 begin
   R.Assign(0, 0, 40, 20);
   inherited Init(R, 'Info');
-  Options := Options or ofCentered
+  Options := Options or ofCentered;
+  R.Assign(1, 1, 39, 2);
+  Insert(New(PStaticText, Init(R, 'ASCII file editor')));
+  R.Assign(1, 3, 39, 4);
+  Insert(New(PStaticText, Init(R, 'Copyright 2019 Andreas Jakobsche')));
+  R.Assign(1, 5, 39, 7);
+  Insert(New(PStaticText, Init(R, 'dedicated to Carla Fischer, carlafischer.de')));
+  R.Assign(1, 8, 39, 12);
+  Insert(New(PStaticText, Init(R, 'This application uses DPMI, if it is available, else it will perhaps have problems to ' +
+    'allocate enough memory for your operations.')));
+  R.Assign(1, 13, 39, 17);
+  Insert(New(PStaticText, Init(R, 'Source code, documentation, and the most recent version of this application are ' +
+    'available ' +
+    'at https://github.com/jakobsche/CARLATXT.')));
+  R.Assign(0, 17, 6, 19);
+  Button := New(PButton, Init(R, 'O~K~', cmOK, bfDefault));
+  Button^.Options := Button^.Options or ofCenterX;
+  Insert(Button);
 end;
 
 
