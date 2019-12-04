@@ -215,9 +215,9 @@ begin
   New(WindowListBox, Init(R, 1, SB));
   Insert(WindowListBox);
   R.Assign(1, 16, 11, 18);
-  Insert(New(PButton, Init(R, 'OK', cmOK, bfDefault)));
+  Insert(New(PButton, Init(R, 'O~K~', cmOK, bfDefault)));
   R.Assign(11, 16, 21, 18);
-  Insert(New(PButton, Init(R, 'Cancel', cmCancel, 0)));
+  Insert(New(PButton, Init(R, '~C~ancel', cmCancel, 0)));
   WindowListBox^.Focus
 end;
 
@@ -232,7 +232,7 @@ constructor TTextApp.Init;
 var
   NumberL: Longint;
 begin
-  MaxHeapSize := 1024  {16384   32768};
+  MaxHeapSize := 1024;
   EditorDialog := StdEditorDialog;
   inherited Init;
   HighResolution := ScreenMode and smFont8x8 <> 0;
@@ -246,7 +246,7 @@ begin
     NumberL := EditWindowList^.Count;
     MessageBox('%d windows collected', @NumberL, mfInformation or mfOKButton)
   end;
-  DisableCommands([cmSelectBluePalette, cmSelectCyanPalette, cmSelectGrayPalette])
+  DisableCommands(CarlaEditorCommands)
 end;
 
 destructor TTextApp.Done;
@@ -263,7 +263,6 @@ var
   WindowListViewData: TWindowListViewData;
   W: PCarlaEditor;
   FN: string;
-  FD: PFileDialog;
 
   function HasFocus(Item: PView): Boolean; far;
   begin
@@ -290,11 +289,9 @@ begin
           ClearEvent(Event)
         end;
       cmOpen: begin
-          ShowMessage('Datei ”ffnen');
-          FD := New(PFileDialog, Init('*.*', 'Open', '', fdOpenButton, 0));
           FN := '';
-          if ExecuteDialog(FD, @FN) = cmOK then begin
-            ShowMessage('Dateiname: "' + FN + '"');
+          if ExecuteDialog(New(PFileDialog, Init('*.*', 'Open', '', fdOKButton, 0)), @FN) <> cmCancel then
+          begin
             if NewEditWindow(FN) = nil then ShowMessage('No new Window')
             else begin
               NumberL := EditWindowList^.Count;
