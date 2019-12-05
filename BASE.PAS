@@ -19,7 +19,7 @@ const
   cmSelectCyanPalette = 101;
   cmSelectGrayPalette = 102;
 
-  cmDummy             = 1000;
+  cmDummy             = 1009;
   cmSelectWindow      = 1001;
   cmMono              = 1002;
   cmBW                = 1003;
@@ -27,10 +27,8 @@ const
   cmResolution        = 1005;
   cmInfo              = 1006;
   cmShowClipboard     = 1007;
+  cmShowCharTable     = 1008;
 
-
-  hcShowClipboard = $0003;
-  hcCarlaEditor   = $0004;
 
   CarlaEditorCommands = [cmSelectBluePalette, cmSelectCyanPalette, cmSelectGrayPalette];
 
@@ -132,7 +130,7 @@ var
 
 implementation
 
-uses MsgBox, Memory, StdDlg, DOS;
+uses Global, MsgBox, Memory, StdDlg, DOS, CharDlg;
 
 
 type
@@ -359,11 +357,13 @@ begin
 
   { Vordefinierte Hilfekontexte }
     hcNoContext: Hint := 'Select an option';
-    hcDragging: Hint := 'Use '#27' '#26' '#24' '#25' with or without Shift, Esc resets, '#13' completes';
+    hcDragging: Hint := 'Use '#27' '#26' '#24' '#25' with or without Shift, Esc resets, '#$11#$D9' completes';
 
   { Diese Anwendung }
     hcShowClipboard: Hint := 'Display clipboard content';
     hcCarlaEditor: Hint := 'Write / edit text or select an option';
+    hcShowCharTable: Hint := 'To insert special characters';
+    hcCharTable: Hint := 'Select a character';
 
   { Vordefinierte Hilfekontexte }
     hcNew: Hint := 'Create file';
@@ -514,6 +514,10 @@ begin
           end;
           ClearEvent(Event)
         end;
+      cmShowCharTable: begin
+          ExecuteDialog(New(PCharacterDialog, Init), nil);
+          ClearEvent(Event)
+        end;
     end
   end
 end;
@@ -540,8 +544,10 @@ begin
       NewMenu(
         StdEditMenuItems(
         NewLine(
+        NewItem('C~h~aracter table ...', '', kbNoKey, cmShowCharTable, hcShowCharTable,
+        NewLine(
         NewItem('~S~how Clipboard', '', kbNoKey, cmShowClipboard, hcShowClipboard,
-        nil)))),
+        nil)))))),
     NewSubMenu('~V~iew', 0,
       NewMenu(
         NewItem('~R~esolution', '', kbNoKey, cmResolution, hcNoContext,
