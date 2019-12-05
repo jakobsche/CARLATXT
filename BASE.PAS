@@ -29,6 +29,8 @@ const
   cmShowClipboard     = 1007;
 
 
+  hcShowClipboard = $0003;
+
   CarlaEditorCommands = [cmSelectBluePalette, cmSelectCyanPalette, cmSelectGrayPalette];
 
 
@@ -268,9 +270,6 @@ begin
 end;
 
 procedure TCarlaBackground.Draw;
-var
-  DrawBuffer: TDrawBuffer;
-  DX, DY, X, Y, DXMax, DYMax: Integer;
 
 function Min(a, b: Integer): Integer;
 begin
@@ -278,6 +277,9 @@ begin
   else Min := b
 end;
 
+var
+  DrawBuffer: TDrawBuffer;
+  DX, DY, X, Y, DXMax, DYMax: Integer;
 begin
   if Text <> nil then begin
     MoveStr(DrawBuffer, Text^, GetColor(1));
@@ -312,8 +314,15 @@ end;
 function TTextAppStatusLine.Hint(AHelpCtx: Word): string;
 begin
   case AHelpCtx of
+
+  { Vordefinierte Hilfekontexte }
     hcNoContext: Hint := 'Select an option';
-    hcDragging: Hint := 'Use arrow keys with or without Shift';
+    hcDragging: Hint := 'Use '#27' '#26' '#24' '#25' with or without Shift';
+
+  { Diese Anwendung }
+    hcShowClipboard: Hint := 'Display clipboard content';
+
+  { Vordefinierte Hilfekontexte }
     hcNew: Hint := 'Create file';
     hcOpen: Hint := 'Edit file from disk';
     hcSave: Hint := 'Save text';
@@ -335,15 +344,16 @@ begin
     hcNext: Hint := 'Select next window';
     hcPrev: Hint := 'Select previous window';
     hcClose: Hint := 'close the active window';
+
+  { Geerbte Hilfekontexte }
     else Hint := inherited Hint(AHelpCtx);
+
   end
 end;
 
 { TTextApp }
 
 constructor TTextApp.Init;
-var
-  NumberL: Longint;
 begin
   MaxHeapSize := 1024;
   EditorDialog := StdEditorDialog;
@@ -356,8 +366,6 @@ begin
     ClipboardWindow^.Palette := wpCyanWindow;
     Clipboard := ClipboardWindow^.Editor;
     ClipBoardWindow^.Hide;
-    NumberL := EditWindowList^.Count;
-    MessageBox('%d windows collected', @NumberL, mfInformation or mfOKButton)
   end;
   DisableCommands(CarlaEditorCommands)
 end;
@@ -372,7 +380,6 @@ end;
 procedure TTextApp.HandleEvent(var Event: TEvent);
 var
   R: TRect;
-  NumberL: Longint;
   WindowListViewData: TWindowListViewData;
   W: PCarlaEditor;
   FN: string;
@@ -396,8 +403,7 @@ begin
       cmNew: begin
           if NewEditWindow('') = nil then ShowMessage('No new Window')
           else begin
-            NumberL := EditWindowList^.Count;
-            MessageBox('%d windows collected', @NumberL, mfInformation or mfOKButton)
+
           end;
           ClearEvent(Event)
         end;
@@ -407,8 +413,7 @@ begin
           begin
             if NewEditWindow(FN) = nil then ShowMessage('No new Window')
             else begin
-              NumberL := EditWindowList^.Count;
-              MessageBox('%d windows collected', @NumberL, mfInformation or mfOKButton)
+
             end;
           end;
           ClearEvent(Event);
@@ -428,9 +433,8 @@ begin
           ClearEvent(Event)
         end;
       cmResolution: begin
-          if HighResolution then SetScreenMode(ScreenMode and not smFont8x8)
-          else SetScreenMode(ScreenMode or smFont8x8);
-          HighResolution := not HighResolution;
+          SetScreenMode(ScreenMode xor smFont8x8);
+          HighResolution := ScreenMode and smFont8x8 <> 0;
           ClearEvent(Event);
         end;
       cmMono: begin
@@ -482,7 +486,7 @@ begin
       NewMenu(
         StdEditMenuItems(
         NewLine(
-        NewItem('~S~how Clipboard', '', kbNoKey, cmShowClipboard, hcNoContext,
+        NewItem('~S~how Clipboard', '', kbNoKey, cmShowClipboard, hcShowClipboard,
         nil)))),
     NewSubMenu('~V~iew', 0,
       NewMenu(
