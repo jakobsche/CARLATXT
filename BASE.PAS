@@ -70,6 +70,7 @@ type
   PWindowListBox = ^TWindowListBox;
   TWindowListBox = object(TListBox)
     function GetText(Item: Integer; MaxLen: Integer): string; virtual;
+    procedure HandleEvent(var Event: TEvent); virtual;
   end;
 
 
@@ -207,7 +208,9 @@ destructor TCarlaEditor.Done;
 begin
   if TextApp.EditWindowList <> nil then
     with TextApp.EditWindowList^ do
-      if IndexOf(@Self) > -1 then Free(@Self);
+      if IndexOf(@Self) > -1 then begin
+        Delete(@Self);
+      end;
   inherited Done;
 end;
 
@@ -218,6 +221,7 @@ begin
     if Enable then EnableCommands(CarlaEditorCommands)
     else DisableCommands(CarlaEditorCommands)
 end;
+
 
 { TWindowListBox }
 
@@ -233,6 +237,25 @@ begin
     else S := W^.GetTitle(MaxLen - 2);
   end;
   GetText := S
+end;
+
+procedure TWindowListBox.HandleEvent(var Event: TEvent);
+var
+  E: TEvent;
+begin
+  if Event.What = evMouseDown then begin
+    if Event.Double then begin
+      {TextApp.ShowMessage('Doppelklick wahrgenommen');}
+      with E do begin
+        E.What := evCommand;
+        E.Command := cmOK;
+        E.InfoPtr := @Self;
+        PutEvent(E)
+      end;
+      ClearEvent(Event)
+    end
+  end;
+  inherited HandleEvent(Event);
 end;
 
 
@@ -268,7 +291,7 @@ end;
 
 constructor TCarlaBackground.Init(var R: TRect; AText: string);
 begin
-  inherited Init(R, '?');
+  inherited Init(R, #176);
   Text := NewStr(AText);
 end;
 
@@ -290,21 +313,24 @@ var
   DrawBuffer: TDrawBuffer;
   DX, DY, X, Y, DXMax, DYMax: Integer;
 begin
-  if Text <> nil then begin
-    MoveStr(DrawBuffer, Text^, GetColor(1));
+  if ScreenMode and smMono = smMono then begin
+    inherited Draw;
+    Exit
+  end;
+  if Text = nil then Text := NewStr(' ');
+  MoveStr(DrawBuffer, Text^, GetColor(1));
+  X := 0;
+  Y := 0;
+  DX := Length(Text^); DY := 1;
+  while Y < Size.Y do begin
+    DYMax := Size.Y - Y;
+    while X < Size.X do begin
+      DXMax := Size.X - X;
+      WriteBuf(X, Y, Min(DX, DXMax), Min(DY, DYMax), DrawBuffer);
+      Inc(X, DX);
+    end;
     X := 0;
-    Y := 0;
-    DX := Length(Text^); DY := 1;
-    while Y < Size.Y do begin
-      DYMax := Size.Y - Y;
-      while X < Size.X do begin
-        DXMax := Size.X - X;
-        WriteBuf(X, Y, Min(DX, DXMax), Min(DY, DYMax), DrawBuffer);
-        Inc(X, DX);
-      end;
-      X := 0;
-      Inc(Y, DY)
-    end
+    Inc(Y, DY)
   end
 end;
 
@@ -333,7 +359,7 @@ begin
 
   { Vordefinierte Hilfekontexte }
     hcNoContext: Hint := 'Select an option';
-    hcDragging: Hint := 'Use '#27' '#26' '#24' '#25' with or without Shift, Esc resets, '#8' completes';
+    hcDragging: Hint := 'Use '#27' '#26' '#24' '#25' with or without Shift, Esc resets, '#13' completes';
 
   { Diese Anwendung }
     hcShowClipboard: Hint := 'Display clipboard content';
@@ -395,11 +421,6 @@ begin
 end;
 
 procedure TTextApp.HandleEvent(var Event: TEvent);
-var
-  R: TRect;
-  WindowListViewData: TWindowListViewData;
-  W: PCarlaEditor;
-  FN: string;
 
   function HasFocus(Item: PView): Boolean; far;
   begin
@@ -413,6 +434,12 @@ var
     Redraw;
   end;
 
+var
+  R: TRect;
+  WindowListViewData: TWindowListViewData;
+  W: PCarlaEditor;
+  FN: string;
+  i: Integer;
 begin
   inherited HandleEvent(Event);
   if Event.What and evCommand <> 0 then begin
@@ -432,6 +459,16 @@ begin
             else begin
 
             end;
+          end;
+          ClearEvent(Event);
+        end;
+      cmCloseAll: with EditWindowList^ do begin
+          {Anmerkung: Die Zwischenablage bleibt erhalten, wird beim Schlieáen
+          also nicht entfernt.}
+          i := 0;
+          while Count > 1 do begin
+            PCarlaEditor(Items^[i])^.Close;
+            if Items^[i] = ClipboardWindow then Inc(i);
           end;
           ClearEvent(Event);
         end;
@@ -525,7 +562,7 @@ begin
             NewItem('~G~ray', '', kbNoKey, cmSelectGrayPalette, hcNoContext,
             nil)))),
         NewLine(
-        NewItem('~L~ist...', '', kbNoKey, cmSelectWindow, hcNoContext,
+        NewItem('~L~ist...', 'Alt-0', kbAlt0, cmSelectWindow, hcNoContext,
         nil))))),
     NewSubMenu('~H~elp', hcNoContext,
       NewMenu(
