@@ -10,7 +10,10 @@ uses
   App, Dialogs, Drivers, Editors, Menus, Objects, Views;
 
 
+
 const
+
+  BackgroundText = 'carlafischer.de '#3' ';
 
   cmSelectBluePalette = 100;
   cmSelectCyanPalette = 101;
@@ -75,12 +78,36 @@ type
     destructor Done; virtual;
   end;
 
+  { TCarlaBackground }
+
+  PCarlaBackground = ^TCarlaBackground;
+  TCarlaBackground = object(TBackground)
+    Text: PString;
+    constructor Init(var R: TRect; AText: string);
+    destructor Done; virtual;
+    procedure Draw; virtual;
+  end;
+
+  { TCarlaDesktop }
+
+  PCarlaDesktop = ^TCarlaDesktop;
+  TCarlaDesktop = object(TDesktop)
+    procedure InitBackground; virtual;
+  end;
+
+
+  PTextAppStatusLine = ^TTextAppStatusLine;
+  TTextAppStatusLine = object(TStatusLine)
+    function Hint(AHelpCtx: Word): string; virtual;
+  end;
+
   { TTextApp }
 
   TTextApp = object(TApplication)
     constructor Init;
     destructor Done; virtual;
     procedure HandleEvent(var Event: TEvent); virtual;
+    procedure InitDesktop; virtual;
     procedure InitMenuBar; virtual;
     procedure InitStatusLine; virtual;
     function NewEditWindow(AFileName: FNameStr): PCarlaEditor;
@@ -226,6 +253,92 @@ begin
   inherited Done;
 end;
 
+{ TCarlaBackground }
+
+constructor TCarlaBackground.Init(var R: TRect; AText: string);
+begin
+  inherited Init(R, '?');
+  Text := NewStr(AText);
+end;
+
+destructor TCarlaBackground.Done;
+begin
+  if Text <> nil then DisposeStr(Text);
+  inherited Done
+end;
+
+procedure TCarlaBackground.Draw;
+var
+  DrawBuffer: TDrawBuffer;
+  DX, DY, X, Y, DXMax, DYMax: Integer;
+
+function Min(a, b: Integer): Integer;
+begin
+  if a <= b then Min := a
+  else Min := b
+end;
+
+begin
+  if Text <> nil then begin
+    MoveStr(DrawBuffer, Text^, GetColor(1));
+    X := 0;
+    Y := 0;
+    DX := Length(Text^); DY := 1;
+    while Y < Size.Y do begin
+      DYMax := Size.Y - Y;
+      while X < Size.X do begin
+        DXMax := Size.X - X;
+        WriteBuf(X, Y, Min(DX, DXMax), Min(DY, DYMax), DrawBuffer);
+        Inc(X, DX);
+      end;
+      X := 0;
+      Inc(Y, DY)
+    end
+  end
+end;
+
+{ TCarlaDesktop }
+
+procedure TCarlaDesktop.InitBackground;
+var
+  R: TRect;
+begin
+  GetExtent(R);
+  Background := New(PCarlaBackground, Init(R, BackgroundText));
+end;
+
+{ TTextAppStatusLine }
+
+function TTextAppStatusLine.Hint(AHelpCtx: Word): string;
+begin
+  case AHelpCtx of
+    hcNoContext: Hint := 'Select an option';
+    hcDragging: Hint := 'Use arrow keys with or without Shift';
+    hcNew: Hint := 'Create file';
+    hcOpen: Hint := 'Edit file from disk';
+    hcSave: Hint := 'Save text';
+    hcSaveAs: Hint := 'Save text to new file';
+    hcSaveAll: Hint := 'Save all open files';
+    hcChangeDir: Hint := 'Make other directory default';
+    hcDOSShell: Hint := 'Use DOS shell';
+    hcExit: Hint := 'Quit this application';
+    hcUndo: Hint := 'Discard last change';
+    hcCut: Hint := 'Cut selected text to clipboard';
+    hcCopy: Hint := 'Copy selected text to clipboard';
+    hcPaste: Hint := 'Insert from clipboard';
+    hcClear: Hint := 'Remove selected text';
+    hcTile: Hint := 'Place windows near each other';
+    hcCascade: Hint := 'Place Windows particularly overlapping each other';
+    hcCloseAll: Hint := 'Close all windows';
+    hcResize: Hint := 'Size and move the active window';
+    hcZoom: Hint := 'Toggle window size to maximum or reverse';
+    hcNext: Hint := 'Select next window';
+    hcPrev: Hint := 'Select previous window';
+    hcClose: Hint := 'close the active window';
+    else Hint := inherited Hint(AHelpCtx);
+  end
+end;
+
 { TTextApp }
 
 constructor TTextApp.Init;
@@ -347,6 +460,15 @@ begin
   end
 end;
 
+procedure TTextApp.InitDesktop;
+var
+  R: TRect;
+begin
+  GetExtent(R);
+  R.Grow(0, -1);
+  Desktop := New(PCarlaDesktop, Init(R))
+end;
+
 procedure TTextApp.InitMenuBar;
 var
   R: TRect;
@@ -392,8 +514,16 @@ begin
 end;
 
 procedure TTextApp.InitStatusLine;
+var
+  R: TRect;
 begin
-  inherited InitStatusLine;
+  GetExtent(R);
+  R.A.Y := R.B.Y - 1;
+  StatusLine := New(PTextAppStatusLine, Init(R,
+    NewStatusDef($0000, $FFFF,
+      NewStatusKey('~Alt-X~ Exit', kbAltX, cmQuit,
+      nil),
+    nil)))
 end;
 
 function TTextApp.NewEditWindow(AFileName: FNameStr): PCarlaEditor;
