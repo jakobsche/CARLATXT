@@ -30,6 +30,7 @@ const
 
 
   hcShowClipboard = $0003;
+  hcCarlaEditor   = $0004;
 
   CarlaEditorCommands = [cmSelectBluePalette, cmSelectCyanPalette, cmSelectGrayPalette];
 
@@ -48,6 +49,7 @@ type
 
   PCarlaEditor = ^TCarlaEditor;
   TCarlaEditor = object(TEditWindow)
+    constructor Init(var Bounds: TRect; FileName: FNameStr; ANumber: Integer);
     destructor Done; virtual;
     procedure SetState(AState: Word; Enable: Boolean); virtual;
     procedure HandleEvent(var Event: TEvent); virtual;
@@ -88,6 +90,7 @@ type
     constructor Init(var R: TRect; AText: string);
     destructor Done; virtual;
     procedure Draw; virtual;
+    function GetPalette: PPalette; virtual;
   end;
 
   { TCarlaDesktop }
@@ -170,6 +173,12 @@ end;
 
 
 { TCarlaEditor }
+
+constructor TCarlaEditor.Init(var Bounds: TRect; FileName: FNameStr; ANumber: Integer);
+begin
+  inherited Init(Bounds, FileName, ANumber);
+  HelpCtx := hcCarlaEditor
+end;
 
 procedure TCarlaEditor.HandleEvent(var Event: TEvent);
 begin
@@ -299,6 +308,13 @@ begin
   end
 end;
 
+function TCarlaBackground.GetPalette: PPalette;
+const
+  P: TPalette = {#22} {#21} {#18} {#16} #3;
+begin
+  GetPalette := @P
+end;
+
 { TCarlaDesktop }
 
 procedure TCarlaDesktop.InitBackground;
@@ -317,10 +333,11 @@ begin
 
   { Vordefinierte Hilfekontexte }
     hcNoContext: Hint := 'Select an option';
-    hcDragging: Hint := 'Use '#27' '#26' '#24' '#25' with or without Shift';
+    hcDragging: Hint := 'Use '#27' '#26' '#24' '#25' with or without Shift, Esc resets, '#8' completes';
 
   { Diese Anwendung }
     hcShowClipboard: Hint := 'Display clipboard content';
+    hcCarlaEditor: Hint := 'Write / edit text or select an option';
 
   { Vordefinierte Hilfekontexte }
     hcNew: Hint := 'Create file';
@@ -526,7 +543,8 @@ begin
   StatusLine := New(PTextAppStatusLine, Init(R,
     NewStatusDef($0000, $FFFF,
       NewStatusKey('~Alt-X~ Exit', kbAltX, cmQuit,
-      nil),
+      StdStatusKeys(
+      nil)),
     nil)))
 end;
 
