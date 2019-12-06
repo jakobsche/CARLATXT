@@ -597,9 +597,8 @@ begin
   R.A.Y := R.B.Y - 1;
   StatusLine := New(PTextAppStatusLine, Init(R,
     NewStatusDef($0000, $FFFF,
-      NewStatusKey('~Alt-X~ Exit', kbAltX, cmQuit,
       StdStatusKeys(
-      nil)),
+      nil),
     nil)))
 end;
 
