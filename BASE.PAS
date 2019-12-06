@@ -19,7 +19,7 @@ const
   cmSelectCyanPalette = 101;
   cmSelectGrayPalette = 102;
 
-  cmDummy             = 1009;
+  cmDummy             = 1000;
   cmSelectWindow      = 1001;
   cmMono              = 1002;
   cmBW                = 1003;
@@ -118,7 +118,7 @@ type
     procedure OutOfMemory; virtual;
     procedure ShowMessage(Msg: string);
   private
-    ClipboardWindow: PEditWindow;
+    ClipboardWindow: PCarlaEditor;
     EditWindowList: PEditWindowList;
     HighResolution: Boolean;
   end;
@@ -206,9 +206,7 @@ destructor TCarlaEditor.Done;
 begin
   if TextApp.EditWindowList <> nil then
     with TextApp.EditWindowList^ do
-      if IndexOf(@Self) > -1 then begin
-        Delete(@Self);
-      end;
+      if IndexOf(@Self) > -1 then Delete(@Self);
   inherited Done;
 end;
 
@@ -434,6 +432,15 @@ procedure TTextApp.HandleEvent(var Event: TEvent);
     Redraw;
   end;
 
+  procedure SaveItem(Item: PCarlaEditor); far;
+  begin
+    if Item <> ClipboardWindow then begin
+      Item^.Show;
+      Item^.Select;
+      Item^.Editor^.Save
+    end
+  end;
+
 var
   R: TRect;
   WindowListViewData: TWindowListViewData;
@@ -462,6 +469,11 @@ begin
           end;
           ClearEvent(Event);
         end;
+      cmSaveAll: begin
+          ShowMessage('Alles speichern');
+          EditWindowList^.ForEach(@SaveItem);
+          ClearEvent(Event)
+        end;
       cmCloseAll: with EditWindowList^ do begin
           {Anmerkung: Die Zwischenablage bleibt erhalten, wird beim Schlieáen
           also nicht entfernt.}
@@ -480,7 +492,7 @@ begin
             if W <> nil then WindowListViewData.Focused := EditWindowList^.IndexOf(W);
             if ExecuteDialog(New(PWindowListDialog, Init), @WindowListViewData) = cmOK then begin
               W := EditWindowList^.At(WindowListViewData.Focused);
-              if PEditWindow(W) = ClipboardWindow then W^.Show;
+              if W = ClipboardWindow then W^.Show;
               W^.Focus
             end
           end;

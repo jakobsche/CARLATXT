@@ -4,7 +4,7 @@ unit Global;
 interface
 
 { Diese Konstanten mssen global einzigartig sein. Deshalb werden sie hier
-  zentral verwaltet }
+  zentral verwaltet. }
 const
   hcShowClipboard = $0003;
   hcCarlaEditor   = $0004;
