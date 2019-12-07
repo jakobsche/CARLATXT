@@ -3,7 +3,7 @@ unit EApp;
 
 interface
 
-uses App, Objects, Views;
+uses App, Dialogs, Objects, Views;
 
 
 const
@@ -15,6 +15,13 @@ type
   TCarlaDrawBuffer = array[0..254] of Word; {l„nger als TDrawBuffer}
   PCarlaDrawBuffer = ^TCarlaDrawBuffer;
 
+
+  { TClockView }
+  PClockView = ^TClockView;
+  TClockView = object(TParamText)
+    constructor Init(var Bounds: TRect);
+    procedure Update;
+  end;
 
   { TCarlaBackground }
 
@@ -42,6 +49,7 @@ type
 
   PCarlaDesktop = ^TCarlaDesktop;
   TCarlaDesktop = object(TDesktop)
+    constructor Init(var R: TRect);
     procedure InitBackground; virtual;
   end;
 
@@ -49,18 +57,48 @@ type
   { TExtendedApplication }
 
   TExtendedApplication = object(TApplication)
+    ClockView: PClockView;
+    procedure Idle; virtual;
     procedure InitDesktop; virtual;
   end;
 
 
 implementation
 
-uses Drivers;
+uses Drivers, DOS;
 
 function Min(a, b: Integer): Integer;
 begin
   if a <= b then Min := a
   else Min := b
+end;
+
+
+{ TClockView }
+
+type
+  PTimeRec = ^TTimeRec;
+  TTimeRec = packed record
+    Hour, Minute, Second: Longint;
+  end;
+
+constructor TClockView.Init(var Bounds: TRect);
+begin
+  inherited Init(Bounds, '%02d:%02d:%02d', 3);
+end;
+
+procedure TClockView.Update;
+var
+  Hour, Minute, Second, Sec100: Word;
+  TimeRec: PTimeRec absolute ParamList;
+begin
+  GetTime(Hour, Minute, Second, Sec100);
+  if (Hour <> TimeRec^.Hour) or (Minute <> TimeRec^.Minute) or (Second <> TimeRec^.Second) then begin
+    TimeRec^.Hour := Hour;
+    TimeRec^.Minute := Minute;
+    TimeRec^.Second := Second;
+    if State and sfVisible <> 0 then Draw
+  end
 end;
 
 { TCarlaBackground }
@@ -169,6 +207,11 @@ end;
 
 { TCarlaDesktop }
 
+constructor TCarlaDesktop.Init(var R: TRect);
+begin
+  inherited Init(R);
+end;
+
 procedure TCarlaDesktop.InitBackground;
 var
   R: TRect;
@@ -181,13 +224,35 @@ end;
 
 { TExtendedApplication }
 
+procedure TExtendedApplication.Idle;
+const Busy: Boolean = False;
+begin
+  inherited Idle;
+  if ClockView <> nil then begin
+    ClockView^.Update;
+    {if not Busy then begin
+      Busy := True;
+      MessageBox('%02d:%02d:%02d', ClockView^.ParamList, mfInformation or mfOKButton);
+      Busy := False
+    end}
+  end
+end;
+
 procedure TExtendedApplication.InitDesktop;
 var
   R: TRect;
 begin
   GetExtent(R);
   R.Grow(0, -1);
-  Desktop := New(PCarlaDesktop, Init(R))
+  Desktop := New(PCarlaDesktop, Init(R));
+  with Desktop^ do begin
+    GetExtent(R);
+    R.A.X := R.B.X - 8;
+    R.A.Y := R.B.Y - 1;
+    ClockView := New(PClockView, Init(R));
+    ClockView^.GrowMode := gfGrowAll;
+    Insert(ClockView)
+  end
 end;
 
 

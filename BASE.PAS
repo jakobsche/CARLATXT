@@ -136,10 +136,10 @@ begin
   Insert(New(PStaticText, Init(R, 'Copyright 2019 Andreas Jakobsche')));
   R.Assign(1, 5, 39, 7);
   Insert(New(PStaticText, Init(R, 'dedicated to Carla Fischer, carlafischer.de')));
-  R.Assign(1, 8, 39, 12);
-  Insert(New(PStaticText, Init(R, 'This application uses DPMI, if it is available, else it will perhaps have problems to ' +
-    'allocate enough memory for your operations.')));
-  R.Assign(1, 13, 39, 17);
+  R.Assign(1, 8, 39, 11);
+  Insert(New(PStaticText, Init(R, 'This application requires DPMI. If it is not available, messages about missing files are ' +
+    'generated.')));
+  R.Assign(1, 12, 39, 16);
   Insert(New(PStaticText, Init(R, 'Source code, documentation, and the most recent version of this application are ' +
     'available ' +
     'at https://github.com/jakobsche/CARLATXT.')));
@@ -505,9 +505,11 @@ begin
   R.A.Y := R.B.Y - 1;
   StatusLine := New(PTextAppStatusLine, Init(R,
     NewStatusDef($0000, $FFFF,
+      NewStatusKey('~Alt-X~ Exit', kbAltX, cmQuit,
+      NewStatusKey('~F10~ Menu', kbF10, cmMenu,
       StdStatusKeys(
-      nil),
-    nil)))
+      nil))),
+    nil)));
 end;
 
 function TTextApp.NewEditWindow(AFileName: FNameStr): PCarlaEditor;
