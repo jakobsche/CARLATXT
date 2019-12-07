@@ -7,13 +7,11 @@ interface
 
 
 uses
-  App, Dialogs, Drivers, Editors, Menus, Objects, Views;
+  App, EApp, Dialogs, Drivers, Editors, Menus, Objects, Views;
 
 
 
 const
-
-  BackgroundText = 'carlafischer.de '#3' ';
 
   cmSelectBluePalette = 100;
   cmSelectCyanPalette = 101;
@@ -81,24 +79,6 @@ type
     destructor Done; virtual;
   end;
 
-  { TCarlaBackground }
-
-  PCarlaBackground = ^TCarlaBackground;
-  TCarlaBackground = object(TBackground)
-    Text: PString;
-    constructor Init(var R: TRect; AText: string);
-    destructor Done; virtual;
-    procedure Draw; virtual;
-    function GetPalette: PPalette; virtual;
-  end;
-
-  { TCarlaDesktop }
-
-  PCarlaDesktop = ^TCarlaDesktop;
-  TCarlaDesktop = object(TDesktop)
-    procedure InitBackground; virtual;
-  end;
-
 
   PTextAppStatusLine = ^TTextAppStatusLine;
   TTextAppStatusLine = object(TStatusLine)
@@ -107,16 +87,16 @@ type
 
   { TTextApp }
 
-  TTextApp = object(TApplication)
+  TTextApp = object(TExtendedApplication)
     constructor Init;
     destructor Done; virtual;
     procedure HandleEvent(var Event: TEvent); virtual;
-    procedure InitDesktop; virtual;
     procedure InitMenuBar; virtual;
     procedure InitStatusLine; virtual;
     function NewEditWindow(AFileName: FNameStr): PCarlaEditor;
     procedure OutOfMemory; virtual;
     procedure ShowMessage(Msg: string);
+    procedure WriteShellMsg; virtual;
   private
     ClipboardWindow: PCarlaEditor;
     EditWindowList: PEditWindowList;
@@ -134,11 +114,10 @@ uses Global, MsgBox, Memory, StdDlg, DOS, CharDlg;
 
 
 type
-  TWindowListViewData = packed record
+  TWindowListViewData = packed record {fÅr TTextApp.HandleEvent verwendet}
     List: PEditWindowList;
     Focused: Integer;
   end;
-
 
 
 { TAboutBox }
@@ -149,7 +128,7 @@ var
   Button: PButton;
 begin
   R.Assign(0, 0, 40, 20);
-  inherited Init(R, 'Info');
+  inherited Init(R, 'About CARLATXT');
   Options := Options or ofCentered;
   R.Assign(1, 1, 39, 2);
   Insert(New(PStaticText, Init(R, 'ASCII file editor')));
@@ -283,69 +262,6 @@ begin
   inherited Done;
 end;
 
-{ TCarlaBackground }
-
-constructor TCarlaBackground.Init(var R: TRect; AText: string);
-begin
-  inherited Init(R, #176);
-  Text := NewStr(AText);
-end;
-
-destructor TCarlaBackground.Done;
-begin
-  if Text <> nil then DisposeStr(Text);
-  inherited Done
-end;
-
-procedure TCarlaBackground.Draw;
-
-function Min(a, b: Integer): Integer;
-begin
-  if a <= b then Min := a
-  else Min := b
-end;
-
-var
-  DrawBuffer: TDrawBuffer;
-  DX, DY, X, Y, DXMax, DYMax: Integer;
-begin
-  if ScreenMode and smMono = smMono then begin
-    inherited Draw;
-    Exit
-  end;
-  if Text = nil then Text := NewStr(' ');
-  MoveStr(DrawBuffer, Text^, GetColor(1));
-  X := 0;
-  Y := 0;
-  DX := Length(Text^); DY := 1;
-  while Y < Size.Y do begin
-    DYMax := Size.Y - Y;
-    while X < Size.X do begin
-      DXMax := Size.X - X;
-      WriteBuf(X, Y, Min(DX, DXMax), Min(DY, DYMax), DrawBuffer);
-      Inc(X, DX);
-    end;
-    X := 0;
-    Inc(Y, DY)
-  end
-end;
-
-function TCarlaBackground.GetPalette: PPalette;
-const
-  P: TPalette = {#22} {#21} {#18} {#16} #3;
-begin
-  GetPalette := @P
-end;
-
-{ TCarlaDesktop }
-
-procedure TCarlaDesktop.InitBackground;
-var
-  R: TRect;
-begin
-  GetExtent(R);
-  Background := New(PCarlaBackground, Init(R, BackgroundText));
-end;
 
 { TTextAppStatusLine }
 
@@ -391,6 +307,7 @@ begin
 
   end
 end;
+
 
 { TTextApp }
 
@@ -534,15 +451,6 @@ begin
   end
 end;
 
-procedure TTextApp.InitDesktop;
-var
-  R: TRect;
-begin
-  GetExtent(R);
-  R.Grow(0, -1);
-  Desktop := New(PCarlaDesktop, Init(R))
-end;
-
 procedure TTextApp.InitMenuBar;
 var
   R: TRect;
@@ -629,6 +537,11 @@ end;
 procedure TTextApp.ShowMessage(Msg: string);
 begin
   MessageBox(Msg, nil, mfInformation or mfOKButton)
+end;
+
+procedure TTextApp.WriteShellMsg;
+begin
+  PrintStr('Type EXIT to return to CARLATXT'#13#10#13#10)
 end;
 
 
