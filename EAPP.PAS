@@ -12,19 +12,21 @@ const
 
 type
 
-  TCarlaDrawBuffer = array[0..254] of Word;
+  TCarlaDrawBuffer = array[0..254] of Word; {l„nger als TDrawBuffer}
   PCarlaDrawBuffer = ^TCarlaDrawBuffer;
+
 
   { TCarlaBackground }
 
   PCarlaBackground = ^TCarlaBackground;
   TCarlaBackground = object(TBackground)
-    Wrap: Boolean;
+    Wrap: Boolean; {bricht Text um, sonst abgeschnitten}
     constructor Init(var R: TRect; AText: string);
     destructor Done; virtual;
     procedure Draw; virtual;
     procedure FillRect(var R: TRect);
     function GetPalette: PPalette; virtual;
+    procedure SetText(AText: string);
     procedure WriteText(var X, Y: Integer; EP: TPoint; var Buffer: TCarlaDrawBuffer; Length: Word);
   private
     Text: PString;
@@ -135,6 +137,13 @@ begin
   end;
 end;
 
+procedure TCarlaBackground.SetText(AText: string);
+begin
+  if Text <> nil then DisposeStr(Text);
+  Text := NewStr(AText);
+  FreeDrawBuffer
+end;
+
 procedure TCarlaBackground.WriteText(var X, Y: Integer; EP: TPoint; var Buffer: TCarlaDrawBuffer; Length: Word);
 var
   DX, DXAvail, DXWrite: Integer;
@@ -156,6 +165,7 @@ begin
         end
   end
 end;
+
 
 { TCarlaDesktop }
 
