@@ -401,6 +401,10 @@ begin
           end;
           ClearEvent(Event);
         end;
+      cmChangeDir: begin
+          ExecuteDialog(New(PChDirDialog, Init(cdNormal, 0)), nil);
+          ClearEvent(Event)
+        end;
       cmSelectWindow: begin
           if EditWindowList <> nil then begin
             WindowListViewData.List := EditWindowList;
