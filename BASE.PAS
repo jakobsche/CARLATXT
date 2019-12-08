@@ -159,6 +159,8 @@ begin
 end;
 
 procedure TCarlaEditor.HandleEvent(var Event: TEvent);
+var
+  S: string;
 begin
   inherited HandleEvent(Event);
   if Event.What <> evNothing then
@@ -176,6 +178,13 @@ begin
       cmSelectGrayPalette: begin
           Palette := wpGrayWindow;
           Redraw;
+          ClearEvent(Event)
+        end;
+      cmShowCharTable: begin
+          S := '';
+          TextApp.ExecuteDialog(New(PCharacterDialog, Init), @S);
+          TextApp.ShowMessage(S);
+          Editor^.InsertText(@S[1], Length(S), False);
           ClearEvent(Event)
         end;
     end;
