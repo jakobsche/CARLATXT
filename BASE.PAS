@@ -183,7 +183,6 @@ begin
       cmShowCharTable: begin
           S := '';
           TextApp.ExecuteDialog(New(PCharacterDialog, Init), @S);
-          TextApp.ShowMessage(S);
           Editor^.InsertText(@S[1], Length(S), False);
           ClearEvent(Event)
         end;
