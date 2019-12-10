@@ -286,6 +286,8 @@ begin
     hcCarlaEditor: Hint := 'Write / edit text or select an option';
     hcShowCharTable: Hint := 'To insert special characters';
     hcCharTable: Hint := 'Select a character';
+    hcResolution: Hint := 'Toogle between more or less lines';
+    hcScreenColour: Hint := 'Select best colour for your display and eyes';
 
   { Vordefinierte Hilfekontexte }
     hcNew: Hint := 'Create file';
@@ -482,8 +484,8 @@ begin
         nil)))))),
     NewSubMenu('~V~iew', 0,
       NewMenu(
-        NewItem('~R~esolution', '', kbNoKey, cmResolution, hcNoContext,
-        NewSubMenu('~S~creen Mode', hcNoContext,
+        NewItem('Screen ~R~esolution', '', kbNoKey, cmResolution, hcResolution,
+        NewSubMenu('~S~creen Colour', hcScreenColour,
           NewMenu(
             NewItem('~M~onochrome', '', kbNoKey, cmMono, hcNoContext,
             NewItem('~B~lack and White', '', kbNoKey, cmBW, hcNoContext,

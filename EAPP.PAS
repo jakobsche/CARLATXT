@@ -34,7 +34,6 @@ type
     procedure FillRect(var R: TRect);
     function GetPalette: PPalette; virtual;
     procedure SetText(AText: string);
-    procedure WriteText(var X, Y: Integer; EP: TPoint; var Buffer: TCarlaDrawBuffer; Length: Word);
   private
     Text: PString;
     DBS: Word;
@@ -42,6 +41,7 @@ type
     procedure FreeDrawBuffer;
     function GetDBLength: Word;
     procedure InitDrawBuffer;
+    procedure WriteText(var X, Y: Integer; EP: TPoint; var Buffer: TCarlaDrawBuffer; Length: Word);
   end;
 
 
@@ -60,6 +60,9 @@ type
     ClockView: PClockView;
     procedure Idle; virtual;
     procedure InitDesktop; virtual;
+    function PutKeyStroke(C: Char; SC: Byte): Boolean;
+      {False bei Erfolg, True bei Puffer voll}
+    procedure PutKeyStrokes(S: string);
   end;
 
 
@@ -84,7 +87,7 @@ type
 
 constructor TClockView.Init(var Bounds: TRect);
 begin
-  inherited Init(Bounds, '%02d:%02d:%02d', 3);
+  inherited Init(Bounds, '%2d:%02d:%02d', 3);
 end;
 
 procedure TClockView.Update;
@@ -93,7 +96,7 @@ var
   TimeRec: PTimeRec absolute ParamList;
 begin
   GetTime(Hour, Minute, Second, Sec100);
-  if (Hour <> TimeRec^.Hour) or (Minute <> TimeRec^.Minute) or (Second <> TimeRec^.Second) then begin
+  if Second <> TimeRec^.Second then begin
     TimeRec^.Hour := Hour;
     TimeRec^.Minute := Minute;
     TimeRec^.Second := Second;
@@ -253,6 +256,22 @@ begin
     ClockView^.GrowMode := gfGrowAll;
     Insert(ClockView)
   end
+end;
+
+function TExtendedApplication.PutKeyStroke(C: Char; SC: Byte): Boolean; assembler;
+asm
+  MOV AH,$05
+  XOR CH,&SC
+  MOV CL,&C
+  INT $16
+end;
+
+procedure TExtendedApplication.PutKeyStrokes(S: string);
+var
+  i: Byte;
+begin
+  for i := 1 to Length(S) do
+    if PutKeyStroke(S[i], 0) then Break
 end;
 
 

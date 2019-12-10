@@ -10,6 +10,8 @@ const
   hcCarlaEditor   = $0004;
   hcShowCharTable = $0005;
   hcCharTable     = $0006;
+  hcResolution    = $0007;
+  hcScreenColour  = $0008;
 
 
 
