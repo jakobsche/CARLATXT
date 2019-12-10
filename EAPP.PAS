@@ -16,7 +16,14 @@ type
   PCarlaDrawBuffer = ^TCarlaDrawBuffer;
 
 
+  { TAboutBoxTemplate }
+
+  TAboutBoxTemplate = object(TDialog)
+    constructor Init;
+  end;
+
   { TClockView }
+
   PClockView = ^TClockView;
   TClockView = object(TParamText)
     constructor Init(var Bounds: TRect);
@@ -63,6 +70,7 @@ type
     function PutKeyStroke(C: Char; SC: Byte): Boolean;
       {False bei Erfolg, True bei Puffer voll}
     procedure PutKeyStrokes(S: string);
+    procedure Terminate;
   end;
 
 
@@ -76,6 +84,17 @@ begin
   else Min := b
 end;
 
+
+{ TAboutBoxTemplate }
+
+constructor TAboutBoxTemplate.Init;
+var
+  R: TRect;
+begin
+  Desktop^.GetExtent(R);
+  R.Grow(-10, -4);
+  inherited Init(R, 'Info')
+end;
 
 { TClockView }
 
@@ -260,10 +279,12 @@ end;
 
 function TExtendedApplication.PutKeyStroke(C: Char; SC: Byte): Boolean; assembler;
 asm
+  PUSH CX
   MOV AH,$05
   XOR CH,&SC
   MOV CL,&C
   INT $16
+  POP CX
 end;
 
 procedure TExtendedApplication.PutKeyStrokes(S: string);
@@ -274,5 +295,15 @@ begin
     if PutKeyStroke(S[i], 0) then Break
 end;
 
+
+procedure TExtendedApplication.Terminate;
+var
+  E: TEvent;
+begin
+  E.What := evCommand;
+  E.Command := cmQuit;
+  E.InfoPtr := @Self;
+  PutEvent(E)
+end;
 
 end.
