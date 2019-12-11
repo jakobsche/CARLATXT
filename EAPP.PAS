@@ -91,9 +91,13 @@ constructor TAboutBoxTemplate.Init;
 var
   R: TRect;
 begin
-  Desktop^.GetExtent(R);
-  R.Grow(-10, -4);
-  inherited Init(R, 'Info')
+  if Desktop <> nil then begin
+    Desktop^.GetExtent(R);
+    R.Grow(-10, -4);
+  end
+  else R.Assign(5, 2, 75, 23);
+  inherited Init(R, 'Info');
+  Options := Options or ofCentered
 end;
 
 { TClockView }
