@@ -65,6 +65,7 @@ type
 
   TExtendedApplication = object(TApplication)
     ClockView: PClockView;
+    procedure ExecProc(DefaultDir, ProgramFile, Parameters: string);
     procedure Idle; virtual;
     procedure InitDesktop; virtual;
     function PutKeyStroke(C: Char; SC: Byte): Boolean;
@@ -76,7 +77,7 @@ type
 
 implementation
 
-uses Drivers, DOS;
+uses Drivers, DOS, Memory;
 
 function Min(a, b: Integer): Integer;
 begin
@@ -249,6 +250,24 @@ end;
 
 
 { TExtendedApplication }
+
+procedure TExtendedApplication.ExecProc(DefaultDir, ProgramFile, Parameters: string);
+begin
+  DoneSysError;
+  DoneEvents;
+  DoneVideo;
+  DoneDosMem;
+  WriteShellMsg;
+  SwapVectors;
+  ChDir(DefaultDir);
+  Exec(ProgramFile, Parameters);
+  SwapVectors;
+  InitDosMem;
+  InitVideo;
+  InitEvents;
+  InitSysError;
+  Redraw;
+end;
 
 procedure TExtendedApplication.Idle;
 const Busy: Boolean = False;
